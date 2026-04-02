@@ -1,0 +1,53 @@
+
+
+1 Scope (Requirements)
+- login admin account
+A. Home (Dashboard)
+
+Show KPIs: Today & This Month (Sales, Purchases, Gross Profit), Stock Value, Top 5 items sold, Low-stock alerts.
+Quick links: New Sale, New Purchase, Manage Items, Reports.
+
+B. Contacts
+
+Two types: Customers and Suppliers.
+CRUD contacts (name, phone, email, address, note, active).
+Use customer in Sales; supplier in Purchases.
+
+C. Items (Products + Stock)
+
+CRUD items: name, SKU, category (optional), cost price, sell price, stock on hand, reorder level.
+Stock updates:
+
+Purchase increases stock at item’s cost.
+Sale decreases stock at item’s sell.
+
+
+Prevent sale if stock would go negative (warn/allow toggle in Settings).
+
+D. Purchase Management
+
+Create Purchase: supplier, date, line items (item, qty, unit cost), total.
+Update stock on save. Allow delete (reverse stock).
+List & filter purchases (date, supplier, item).
+
+E. Sales (existing)
+
+Add customer to sale (optional).
+Validate stock (based on Settings).
+Delete sale reverses stock.
+
+F. Reports
+
+Item Sales Report: by date range; totals qty, revenue by item.
+Item Purchase Report: by date range; totals qty, cost by item.
+Profit & Loss: (Sales Revenue − COGS − Discounts [if any]; we’ll skip discounts now).
+
+COGS uses moving average cost or simple cost (we will use Average Cost simplified).
+
+
+Stock Report: current stock, stock value (qty × cost), low-stock items.
+Export to CSV (optional add-on).
+
+G. Settings
+
+Business name, currency, stock protection (block negative stock: on/off), low stock threshold default, date format, reset data (danger). create it to me use html css java script with profesional UX/UI for system it have light and duck mod also
