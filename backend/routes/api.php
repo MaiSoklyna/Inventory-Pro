@@ -25,6 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Items
     Route::get('/items', [ItemController::class, 'index']);
     Route::post('/items', [ItemController::class, 'store']);
+    Route::get('/items/{id}/stock', [ItemController::class, 'stock']);
     Route::get('/items/{id}', [ItemController::class, 'show']);
     Route::put('/items/{id}', [ItemController::class, 'update']);
     Route::delete('/items/{id}', [ItemController::class, 'destroy']);
@@ -54,6 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Settings
     Route::get('/settings', [SettingController::class, 'index']);
     Route::put('/settings', [SettingController::class, 'bulkUpdate']);
+    Route::post('/settings/reset', [SettingController::class, 'reset']);
     Route::post('/settings', [SettingController::class, 'store']);
     Route::get('/settings/{key}', [SettingController::class, 'show']);
     Route::put('/settings/{key}', [SettingController::class, 'update']);

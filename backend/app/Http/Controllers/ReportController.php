@@ -27,11 +27,40 @@ class ReportController extends Controller
         // Calculate total stock value
         $stock_value = Item::selectRaw('SUM(stock_on_hand * average_cost) as total_value')->value('total_value') ?? 0;
 
-        $sales_trend = Sale::selectRaw('DATE(sale_date) as date, SUM(total_amount) as amount')
-            ->where('sale_date', '>=', now()->subDays(30))
-            ->groupBy('sale_date')
-            ->orderBy('sale_date')
-            ->get();
+        // Build a CONTINUOUS daily sales series for the last 30 days. Days
+        // with no sales are filled with 0 so the trend chart reads as one
+        // unbroken line instead of a few disconnected dots.
+        $rangeStart = now()->subDays(29)->startOfDay();
+        $salesByDay = Sale::selectRaw('DATE(sale_date) as date, SUM(total_amount) as amount')
+            ->where('sale_date', '>=', $rangeStart)
+            ->groupBy('date')
+            ->pluck('amount', 'date');
+
+        $sales_chart = [];
+        for ($i = 0; $i < 30; $i++) {
+            $day = $rangeStart->copy()->addDays($i)->toDateString();
+            $sales_chart[] = [
+                'date' => $day,
+                'amount' => (float) ($salesByDay[$day] ?? 0),
+            ];
+        }
+
+        // Real trend percentages versus the previous comparable period.
+        $yesterday_sales = Sale::whereBetween('sale_date', [
+            now()->subDay()->startOfDay(),
+            now()->subDay()->endOfDay(),
+        ])->sum('total_amount');
+        $today_trend = $yesterday_sales > 0
+            ? round((($today_sales - $yesterday_sales) / $yesterday_sales) * 100, 1)
+            : 0;
+
+        $last_month_sales = Sale::whereBetween('sale_date', [
+            now()->subMonthNoOverflow()->startOfMonth(),
+            now()->subMonthNoOverflow()->endOfMonth(),
+        ])->sum('total_amount');
+        $month_trend = $last_month_sales > 0
+            ? round((($month_sales - $last_month_sales) / $last_month_sales) * 100, 1)
+            : 0;
 
         $top_items = SaleItem::selectRaw('items.name, SUM(sale_items.quantity) as quantity')
             ->join('items', 'items.id', '=', 'sale_items.item_id')
@@ -50,16 +79,16 @@ class ReportController extends Controller
                 'purchases' => (float) $today_purchases,
                 'profit' => (float) ($today_sales - $today_purchases),
                 'stock_value' => (float) $stock_value,
-                'sales_trend' => 0, // Placeholder for trend %
+                'sales_trend' => $today_trend,
             ],
             'month' => [
                 'sales' => (float) $month_sales,
                 'purchases' => (float) $month_purchases,
                 'profit' => (float) ($month_sales - $month_purchases),
                 'low_stock_count' => $low_stock_count,
-                'sales_trend' => 0, // Placeholder for trend %
+                'sales_trend' => $month_trend,
             ],
-            'sales_chart' => $sales_trend,
+            'sales_chart' => $sales_chart,
             'top_items' => $top_items,
             'low_stock_items' => $low_stock,
         ]);
@@ -81,11 +110,11 @@ class ReportController extends Controller
         }
 
         if ($validated['start_date'] ?? null) {
-            $query->where('sale_items.created_at', '>=', $validated['start_date']);
+            $query->whereDate('sale_items.created_at', '>=', $validated['start_date']);
         }
 
         if ($validated['end_date'] ?? null) {
-            $query->where('sale_items.created_at', '<=', $validated['end_date']);
+            $query->whereDate('sale_items.created_at', '<=', $validated['end_date']);
         }
 
         $data = $query->groupBy('sale_items.item_id', DB::raw('DATE(sale_items.created_at)'), 'items.name')
@@ -111,11 +140,11 @@ class ReportController extends Controller
         }
 
         if ($validated['start_date'] ?? null) {
-            $query->where('purchase_items.created_at', '>=', $validated['start_date']);
+            $query->whereDate('purchase_items.created_at', '>=', $validated['start_date']);
         }
 
         if ($validated['end_date'] ?? null) {
-            $query->where('purchase_items.created_at', '<=', $validated['end_date']);
+            $query->whereDate('purchase_items.created_at', '<=', $validated['end_date']);
         }
 
         $data = $query->groupBy('purchase_items.item_id', DB::raw('DATE(purchase_items.created_at)'), 'items.name')

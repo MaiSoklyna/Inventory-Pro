@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react'
-import { Plus, Eye, Trash2, Search, X, ShoppingCart, Printer } from 'lucide-react'
+import { Plus, Eye, Trash2, Search, X, ShoppingCart, Printer, Download } from 'lucide-react'
 import { purchaseService, contactService, itemService } from '../services/api'
 import Modal from '../components/Modal'
 import { LanguageContext } from '../App'
 import toast from 'react-hot-toast'
 import { formatCurrency, formatDate } from '../utils/helpers'
+import { exportToCSV } from '../utils/exportCSV'
 
 export default function Purchases() {
   const { t } = useContext(LanguageContext)
@@ -133,6 +134,29 @@ export default function Purchases() {
     p.contact?.name.toLowerCase().includes(search.toLowerCase())
   )
 
+  const handleExport = () => {
+    if (!filteredPurchases.length) {
+      toast.error(t.no_results || 'No data to export')
+      return
+    }
+    const headers = [
+      t.table_date,
+      t.purchase_number,
+      t.supplier,
+      t.total_amount,
+      t.status,
+    ]
+    const rows = filteredPurchases.map((p) => [
+      p.purchase_date,
+      p.purchase_number,
+      p.contact?.name || '',
+      p.total_amount,
+      p.status,
+    ])
+    exportToCSV(`purchases_${new Date().toISOString().split('T')[0]}.csv`, headers, rows)
+    toast.success(t.export_success || 'Export ready')
+  }
+
   return (
     <div className="p-6 space-y-6 animate-fade-in max-w-[1600px] mx-auto">
       <div className="flex items-center justify-between">
@@ -143,13 +167,23 @@ export default function Purchases() {
           </h1>
           <p className="text-sm text-slate-500 mt-1">Manage and track your business replenishment orders.</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="btn-primary flex items-center space-x-2"
-        >
-          <Plus size={20} />
-          <span>{t.add_purchase}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExport}
+            className="btn-secondary flex items-center space-x-2"
+            title={t.export_csv || 'Export CSV'}
+          >
+            <Download size={20} />
+            <span>{t.export_csv || 'Export CSV'}</span>
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="btn-primary flex items-center space-x-2"
+          >
+            <Plus size={20} />
+            <span>{t.add_purchase}</span>
+          </button>
+        </div>
       </div>
 
       <div className="relative">

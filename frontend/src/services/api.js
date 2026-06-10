@@ -78,7 +78,7 @@ export const reportService = {
       api.get('/reports/item-sales', { params }),
       api.get('/reports/item-purchases', { params })
     ]);
-    
+
     return {
       data: {
         summary: {
@@ -106,11 +106,11 @@ export const reportService = {
         }))
       }
     };
-  },  getItemSalesReport: (startDate, endDate) => 
+  },  getItemSalesReport: (startDate, endDate) =>
     api.get(`/reports/item-sales?start_date=${startDate}&end_date=${endDate}`),
-  getItemPurchaseReport: (startDate, endDate) => 
+  getItemPurchaseReport: (startDate, endDate) =>
     api.get(`/reports/item-purchases?start_date=${startDate}&end_date=${endDate}`),
-  getProfitLoss: (startDate, endDate) => 
+  getProfitLoss: (startDate, endDate) =>
     api.get(`/reports/profit-loss?start_date=${startDate}&end_date=${endDate}`),
   getStockReport: () => api.get('/reports/stock'),
 }
@@ -123,8 +123,7 @@ export const dashboardService = {
 export const settingsService = {
   getSettings: () => api.get('/settings'),
   updateSettings: (data) => api.put('/settings', data),
-  // Placeholder if backend reset is missing, or point to a valid maintenance route
-  resetData: () => api.post('/settings'), 
+  resetData: () => api.post('/settings/reset'),
 }
 
 export default api

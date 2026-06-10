@@ -56,26 +56,53 @@ export default function Reports() {
     }
   }
 
+  // Wrap each field so commas, quotes and newlines don't break columns in Excel
+  const csvCell = (value) => {
+    const s = value === null || value === undefined ? '' : String(value)
+    return `"${s.replace(/"/g, '""')}"`
+  }
+
   const exportCSV = (type) => {
-    if (!reportData) return
-    const data = type === 'sales' ? reportData.item_sales : type === 'purchases' ? reportData.item_purchases : [...reportData.item_sales, ...reportData.item_purchases]
-    
-    let csvContent = "data:text/csv;charset=utf-8,"
-    csvContent += `${t.table_date},${t.table_type},${t.table_item},${t.table_qty},${t.table_price},${t.table_total}\n`
-    
-    data.forEach(row => {
+    if (!reportData) {
+      toast.error(t.failed_report)
+      return
+    }
+
+    const data =
+      type === 'sales'
+        ? reportData.item_sales
+        : type === 'purchases'
+        ? reportData.item_purchases
+        : [...reportData.item_sales, ...reportData.item_purchases]
+
+    if (!data || data.length === 0) {
+      toast.error(t.no_data || 'No data to export')
+      return
+    }
+
+    const header = [t.table_date, t.table_type, t.table_item, t.table_qty, t.table_price, t.table_total]
+    const rows = data.map((row) => {
       const rowType = row.sale_number ? t.type_sale : t.type_purchase
-      const rowDate = row.sale_date || row.purchase_date
+      const rowDate = row.sale_date || row.purchase_date || ''
       const rowName = row.item_name || `Item #${row.item_id}`
-      csvContent += `${rowDate},${rowType},${rowName},${row.quantity},${row.unit_price},${row.subtotal}\n`
+      return [rowDate, rowType, rowName, row.quantity, row.unit_price, row.subtotal]
     })
 
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement("a")
-    link.setAttribute("href", encodedUri)
-    link.setAttribute("download", `report_${type}_${dateRange.start_date}_to_${dateRange.end_date}.csv`)
+    const csvBody = [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n')
+
+    // Prepend a UTF-8 BOM so Excel reads accented / Khmer characters correctly
+    const blob = new Blob(['﻿' + csvBody], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `report_${type}_${dateRange.start_date}_to_${dateRange.end_date}.csv`)
     document.body.appendChild(link)
     link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+    toast.success(t.export_success || 'Export ready')
   }
 
   const printPDF = (type) => {
@@ -256,22 +283,6 @@ export default function Reports() {
             </div>
 
             <div className="h-px bg-slate-100 mb-12"></div>
-
-            {/* Snapshot Summary Section */}
-            <div className="grid grid-cols-3 gap-8 mb-12">
-              <div className="p-8 bg-slate-50 rounded-2xl border border-slate-100">
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t.total_sales_revenue}</p>
-                 <p className="text-2xl font-black text-emerald-600">{formatCurrency(reportData.summary.total_sales)}</p>
-              </div>
-              <div className="p-8 bg-slate-50 rounded-2xl border border-slate-100">
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t.total_purchases_cost}</p>
-                 <p className="text-2xl font-black text-sky-600">{formatCurrency(reportData.summary.total_purchases)}</p>
-              </div>
-              <div className="p-8 bg-slate-900 text-white rounded-2xl shadow-xl">
-                 <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-2">{t.net_profit}</p>
-                 <p className="text-2xl font-black">{formatCurrency(reportData.summary.net_profit)}</p>
-              </div>
-            </div>
 
             {/* Transactions Section */}
             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 px-2">{t.detailed_data}</h4>

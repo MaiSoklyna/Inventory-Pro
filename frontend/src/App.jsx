@@ -29,11 +29,11 @@ function App() {
     // Check if user is logged in
     const token = localStorage.getItem('auth_token')
     const theme = localStorage.getItem('theme') || 'light'
-    
+
     if (token) {
       setUser({ token })
     }
-    
+
     setIsDark(theme === 'dark')
     setLoading(false)
   }, [])
@@ -67,12 +67,12 @@ function App() {
       <ThemeContext.Provider value={{ isDark, toggleTheme }}>
         <AuthContext.Provider value={{ user, setUser, logout }}>
           <Toaster position="top-right" />
-          
+
           <Routes>
             {/* Public Route: Login */}
-            <Route 
-              path="/login" 
-              element={!user ? <Login setUser={setUser} /> : <Navigate to="/" replace />} 
+            <Route
+              path="/login"
+              element={!user ? <Login setUser={setUser} /> : <Navigate to="/" replace />}
             />
 
             {/* Protected Routes */}

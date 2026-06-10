@@ -60,6 +60,18 @@ class ItemController extends Controller
         return response()->json($item);
     }
 
+    public function stock($id)
+    {
+        $item = Item::findOrFail($id);
+        return response()->json([
+            'id' => $item->id,
+            'name' => $item->name,
+            'sku' => $item->sku,
+            'stock_on_hand' => $item->stock_on_hand,
+            'reorder_level' => $item->reorder_level,
+        ]);
+    }
+
     public function update(Request $request, $id)
     {
         $item = Item::findOrFail($id);
