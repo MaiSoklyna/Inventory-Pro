@@ -315,4 +315,5 @@ This project is licensed under the MIT License.
 
 **Created with ❤️ for inventory management**
 #   I n v e n t o r y - P r o  
+ #   I n v e n t o r y - P r o  
  
