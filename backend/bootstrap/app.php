@@ -12,8 +12,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Ensure API group forces JSON responses for unauthenticated/errors
-        $middleware->appendToGroup('api', \App\Http\Middleware\ForceJsonForApi::class);
+        // Apply globally to catch all requests including preflight OPTIONS
+        $middleware->append(\App\Http\Middleware\ForceJsonForApi::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

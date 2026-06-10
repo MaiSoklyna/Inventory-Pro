@@ -53,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Settings
     Route::get('/settings', [SettingController::class, 'index']);
+    Route::put('/settings', [SettingController::class, 'bulkUpdate']);
     Route::post('/settings', [SettingController::class, 'store']);
     Route::get('/settings/{key}', [SettingController::class, 'show']);
     Route::put('/settings/{key}', [SettingController::class, 'update']);

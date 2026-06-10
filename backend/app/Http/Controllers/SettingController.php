@@ -9,8 +9,8 @@ class SettingController extends Controller
 {
     public function index()
     {
-        $settings = Setting::all();
-        return response()->json($settings);
+        $settings = Setting::pluck('value', 'key');
+        return response()->json((object) $settings->toArray());
     }
 
     public function store(Request $request)
@@ -43,5 +43,14 @@ class SettingController extends Controller
 
         $setting->update($validated);
         return response()->json($setting);
+    }
+
+    public function bulkUpdate(Request $request)
+    {
+        $data = $request->all();
+        foreach ($data as $key => $value) {
+            Setting::updateOrCreate(['key' => $key], ['value' => is_array($value) ? json_encode($value) : $value]);
+        }
+        return response()->json(['message' => 'Settings updated successfully']);
     }
 }

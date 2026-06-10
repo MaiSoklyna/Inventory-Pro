@@ -44,7 +44,7 @@ export default function Purchases() {
       setSuppliers(contactsRes.data.data ? contactsRes.data.data : contactsRes.data)
       setItems(itemsRes.data.data ? itemsRes.data.data : itemsRes.data)
     } catch (error) {
-      toast.error(t.failed_load)
+      toast.error(t.failed_load_data)
     } finally {
       setLoading(false)
     }

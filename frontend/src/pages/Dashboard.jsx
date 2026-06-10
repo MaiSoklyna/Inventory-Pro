@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react'
 import { TrendingUp, ShoppingBag, ShoppingCart, DollarSign, Package, ArrowRight, AlertCircle } from 'lucide-react'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { dashboardService } from '../services/api'
 import { LanguageContext } from '../App'
 import { Link } from 'react-router-dom'
@@ -67,7 +68,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title={t.today_sales}
-          value={formatCurrency(stats?.today_sales || 0)}
+          value={formatCurrency(stats?.today?.sales || 0)}
           icon={ShoppingBag}
           color="bg-emerald-500"
           footerLink="/sales"
@@ -75,7 +76,7 @@ export default function Dashboard() {
         />
         <StatCard 
           title={t.today_purchases}
-          value={formatCurrency(stats?.today_purchases || 0)}
+          value={formatCurrency(stats?.today?.purchases || 0)}
           icon={ShoppingCart}
           color="bg-sky-500"
           footerLink="/purchases"
@@ -83,7 +84,7 @@ export default function Dashboard() {
         />
         <StatCard 
           title={t.stock_value}
-          value={formatCurrency(stats?.stock_value || 0)}
+          value={formatCurrency(stats?.today?.stock_value || 0)}
           icon={DollarSign}
           color="bg-amber-500"
           footerLink="/items"
@@ -91,7 +92,7 @@ export default function Dashboard() {
         />
         <StatCard 
           title={t.gross_profit}
-          value={formatCurrency((stats?.today_sales || 0) - (stats?.today_purchases || 0))}
+          value={formatCurrency(stats?.today?.profit || 0)}
           icon={TrendingUp}
           color="bg-indigo-500"
         />
@@ -103,8 +104,46 @@ export default function Dashboard() {
             <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest">{t.sales_trend}</h3>
             <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full uppercase">Realtime Data</span>
           </div>
-          <div className="h-[200px] flex items-center justify-center border-2 border-dashed border-slate-100 dark:border-gray-800 rounded-xl text-slate-300 font-medium">
-             (Sales Chart Visualization coming soon in Simple mode)
+          <div className="h-[250px] w-full">
+            {stats?.sales_chart && stats.sales_chart.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={stats.sales_chart} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis 
+                    dataKey="date" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748b', fontSize: 12 }} 
+                    dy={10}
+                    tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748b', fontSize: 12 }}
+                    tickFormatter={(val) => `$${val}`}
+                  />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '0.75rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                    formatter={(value) => [formatCurrency(value), "Sales"]}
+                    labelFormatter={(label) => new Date(label).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                    cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3' }}
+                  />
+                  <Area type="monotone" dataKey="amount" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorAmount)" activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981' }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-slate-100 dark:border-gray-800 rounded-xl text-slate-400">
+                <TrendingUp size={32} className="mb-3 text-slate-300 dark:text-slate-600" />
+                <p className="font-medium text-sm">{t.no_data || 'No sales data available for the selected period'}</p>
+              </div>
+            )}
           </div>
         </div>
 

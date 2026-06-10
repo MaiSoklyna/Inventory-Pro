@@ -1,11 +1,12 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta?.env?.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
+const API_BASE_URL = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:8000/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json'
   },
   timeout: 15000,
 })
@@ -18,6 +19,17 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401 && !error.config.url.endsWith('/login')) {
+      localStorage.removeItem('auth_token')
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
 
 export const authService = {
   login: (email, password) => api.post('/login', { email, password }),
@@ -60,8 +72,41 @@ export const saleService = {
 export const reportService = {
   getDashboard: () => api.get('/reports/dashboard'),
   // Standardized custom report method used in Reports.jsx
-  getCustomReport: (params) => api.get('/reports/profit-loss', { params }),
-  getItemSalesReport: (startDate, endDate) => 
+  getCustomReport: async (params) => {
+    const [profitLossRes, itemSalesRes, itemPurchasesRes] = await Promise.all([
+      api.get('/reports/profit-loss', { params }),
+      api.get('/reports/item-sales', { params }),
+      api.get('/reports/item-purchases', { params })
+    ]);
+    
+    return {
+      data: {
+        summary: {
+           total_sales: profitLossRes.data.revenue,
+           total_purchases: profitLossRes.data.cost_of_goods_sold,
+           net_profit: profitLossRes.data.profit,
+           profit_margin: profitLossRes.data.profit_margin_percent
+        },
+        item_sales: itemSalesRes.data.map(item => ({
+             sale_number: 'SALE',
+             sale_date: item.date,
+             item_name: item.item_name,
+             item_id: item.item_id,
+             quantity: parseInt(item.total_quantity),
+             unit_price: item.total_quantity > 0 ? (item.total_amount / item.total_quantity) : 0,
+             subtotal: parseFloat(item.total_amount)
+        })),
+        item_purchases: itemPurchasesRes.data.map(item => ({
+             purchase_date: item.date,
+             item_name: item.item_name,
+             item_id: item.item_id,
+             quantity: parseInt(item.total_quantity),
+             unit_price: item.total_quantity > 0 ? (item.total_amount / item.total_quantity) : 0,
+             subtotal: parseFloat(item.total_amount)
+        }))
+      }
+    };
+  },  getItemSalesReport: (startDate, endDate) => 
     api.get(`/reports/item-sales?start_date=${startDate}&end_date=${endDate}`),
   getItemPurchaseReport: (startDate, endDate) => 
     api.get(`/reports/item-purchases?start_date=${startDate}&end_date=${endDate}`),

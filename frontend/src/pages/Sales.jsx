@@ -183,7 +183,7 @@ export default function Sales() {
       setCustomers(contactsRes.data.data ? contactsRes.data.data : contactsRes.data)
       setItems(itemsRes.data.data ? itemsRes.data.data : itemsRes.data)
     } catch {
-      toast.error(t.failed_load)
+      toast.error(t.failed_load_data)
     } finally {
       setLoading(false)
     }

@@ -34,7 +34,7 @@ export default function Contacts() {
       const response = await contactService.getAll(type)
       setContacts(response.data.data ? response.data.data : response.data)
     } catch (error) {
-      toast.error(t.failed_load)
+      toast.error(t.failed_load_data)
     } finally {
       setLoading(false)
     }

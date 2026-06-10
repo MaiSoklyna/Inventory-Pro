@@ -22,7 +22,7 @@ class ReportController extends Controller
         
         $month_sales = Sale::where('sale_date', '>=', $monthStart)->sum('total_amount');
         $month_purchases = Purchase::where('purchase_date', '>=', $monthStart)->sum('total_amount');
-        $low_stock_count = Item::whereRaw('stock_on_hand < reorder_level')->count();
+        $low_stock_count = Item::whereRaw('stock_on_hand <= reorder_level')->count();
 
         // Calculate total stock value
         $stock_value = Item::selectRaw('SUM(stock_on_hand * average_cost) as total_value')->value('total_value') ?? 0;
@@ -40,8 +40,8 @@ class ReportController extends Controller
             ->limit(5)
             ->get();
 
-        $low_stock = Item::whereRaw('stock_on_hand < reorder_level')
-            ->selectRaw('id, name, stock_on_hand as stock')
+        $low_stock = Item::whereRaw('stock_on_hand <= reorder_level')
+            ->select('id', 'name', 'stock_on_hand')
             ->get();
 
         return response()->json([
@@ -159,7 +159,7 @@ class ReportController extends Controller
 
         $items->each(function ($item) {
             $item->inventory_value = $item->stock_on_hand * $item->average_cost;
-            $item->status = $item->stock_on_hand < $item->reorder_level ? 'low' : 'ok';
+            $item->status = $item->stock_on_hand <= $item->reorder_level ? 'low' : 'ok';
         });
 
         $total_value = $items->sum('inventory_value');

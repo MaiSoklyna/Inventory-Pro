@@ -35,7 +35,7 @@ export default function Items() {
       const payload = response.data
       setItems(Array.isArray(payload) ? payload : payload.data || [])
     } catch (error) {
-      toast.error(t.failed_load)
+      toast.error(t.failed_load_data)
     } finally {
       setLoading(false)
     }

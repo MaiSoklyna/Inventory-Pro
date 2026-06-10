@@ -1,8 +1,0 @@
-.env.local
-.env.production.local
-/vendor
-/node_modules
-.DS_Store
-.env
-npm-debug.log
-yarn-error.log
