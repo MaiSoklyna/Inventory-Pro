@@ -41,7 +41,7 @@ function InvoiceView({ sale, items, t }) {
   }
 
   return (
-    <div id="invoice-print-area" className="p-12 max-w-[850px] mx-auto bg-white text-slate-900 font-sans">
+    <div id="invoice-print-area" className="p-6 sm:p-8 max-w-[850px] mx-auto bg-white text-slate-900 font-sans">
       {/* Header Section */}
       <div className="flex justify-between items-start mb-10">
         <div>
@@ -91,9 +91,9 @@ function InvoiceView({ sale, items, t }) {
 
       {/* Summary Section */}
       <div className="flex justify-end mb-16">
-        <div className="w-full max-w-md bg-slate-50 rounded-2xl p-10 flex justify-between items-center">
+        <div className="w-full max-w-md bg-slate-50 rounded-2xl p-6 flex justify-between items-center gap-4">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">{t.table_total}</span>
-          <span className="text-4xl font-black text-slate-900 tracking-tighter">{formatCurrency(sale.total_amount)}</span>
+          <span className="text-2xl font-black text-slate-900 tracking-tight whitespace-nowrap tabular-nums">{formatCurrency(sale.total_amount)}</span>
         </div>
       </div>
 
@@ -169,6 +169,34 @@ export default function Sales() {
     items: [{ item_id: '', quantity: 1, unit_price: 0 }]
   }
   const [formData, setFormData] = useState(initialFormData)
+
+  // Quick-add new customer without leaving the sale form
+  const emptyContact = { name: '', email: '', phone: '' }
+  const [showNewContact, setShowNewContact] = useState(false)
+  const [newContact, setNewContact] = useState(emptyContact)
+  const [savingContact, setSavingContact] = useState(false)
+
+  const handleCreateContact = async () => {
+    if (!newContact.name || !newContact.email || !newContact.phone) {
+      toast.error(t.fill_required || 'Name, email and phone are required')
+      return
+    }
+    setSavingContact(true)
+    try {
+      const res = await contactService.create({ ...newContact, type: 'customer' })
+      const created = res.data.data ? res.data.data : res.data
+      setCustomers((prev) => [...prev, created])
+      setFormData((fd) => ({ ...fd, contact_id: String(created.id) }))
+      setNewContact(emptyContact)
+      setShowNewContact(false)
+      toast.success(t.success_create || 'Customer added')
+    } catch (e) {
+      const errs = e.response?.data?.errors
+      toast.error((errs && Object.values(errs)[0]?.[0]) || e.response?.data?.message || t.failed_op)
+    } finally {
+      setSavingContact(false)
+    }
+  }
 
   useEffect(() => { fetchData() }, [])
 
@@ -441,35 +469,56 @@ export default function Sales() {
       )}
 
       {/* ── Create Sale Modal ── */}
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={t.add_sale} size="full">
-        <form onSubmit={handleSubmit} className="space-y-12 transition-all">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <div className="space-y-4">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">{t.customer}</label>
-              <select value={formData.contact_id} onChange={(e) => setFormData({ ...formData, contact_id: e.target.value })} className="input-field !py-4 text-lg font-semibold" required>
-                <option value="">{t.select_contact}</option>
-                {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={t.add_sale} size="xl">
+        <form onSubmit={handleSubmit} className="space-y-6 transition-all">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between pl-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.customer}</label>
+                <button
+                  type="button"
+                  onClick={() => setShowNewContact((v) => !v)}
+                  className="text-[10px] font-bold text-sky-600 flex items-center gap-1 hover:bg-sky-50 dark:hover:bg-sky-900/20 px-2 py-1 rounded-md transition-colors"
+                >
+                  {showNewContact ? <X size={13} /> : <Plus size={13} />}
+                  {showNewContact ? (t.cancel || 'Cancel') : (t.new_customer || 'New customer')}
+                </button>
+              </div>
+              {!showNewContact ? (
+                <select value={formData.contact_id} onChange={(e) => setFormData({ ...formData, contact_id: e.target.value })} className="input-field font-semibold" required>
+                  <option value="">{t.select_contact}</option>
+                  {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              ) : (
+                <div className="space-y-2 p-3 border border-sky-100 dark:border-sky-900/40 bg-sky-50/50 dark:bg-sky-900/10 rounded-xl">
+                  <input type="text" value={newContact.name} onChange={(e) => setNewContact({ ...newContact, name: e.target.value })} placeholder={t.name || 'Name'} className="input-field" />
+                  <input type="email" value={newContact.email} onChange={(e) => setNewContact({ ...newContact, email: e.target.value })} placeholder={t.email_label || 'Email'} className="input-field" />
+                  <input type="text" value={newContact.phone} onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })} placeholder={t.phone || 'Phone'} className="input-field" />
+                  <button type="button" onClick={handleCreateContact} disabled={savingContact} className="w-full btn-primary !py-2 text-sm disabled:opacity-50">
+                    {savingContact ? (t.loading || 'Saving...') : (t.save || 'Save customer')}
+                  </button>
+                </div>
+              )}
             </div>
-            <div className="space-y-4">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">{t.table_date}</label>
-              <input type="date" value={formData.sale_date} onChange={(e) => setFormData({ ...formData, sale_date: e.target.value })} className="input-field !py-4 text-lg font-semibold" required />
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">{t.table_date}</label>
+              <input type="date" value={formData.sale_date} onChange={(e) => setFormData({ ...formData, sale_date: e.target.value })} className="input-field font-semibold" required />
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="flex justify-between items-center border-b border-slate-100 dark:border-gray-800 pb-4">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.detailed_data}</h4>
-              <button type="button" onClick={handleAddItemRow} className="text-xs font-bold text-sky-600 flex items-center gap-2 hover:bg-sky-50 px-3 py-1.5 rounded-lg transition-colors">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-100 dark:border-gray-800 pb-3">
+              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.detailed_data}</h4>
+              <button type="button" onClick={handleAddItemRow} className="text-xs font-bold text-sky-600 flex items-center gap-2 hover:bg-sky-50 dark:hover:bg-sky-900/20 px-3 py-1.5 rounded-lg transition-colors">
                 <Plus size={16} /> {t.add_row}
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {formData.items.map((it, index) => (
-                <div key={index} className="flex flex-wrap lg:flex-nowrap gap-6 items-end p-6 border border-slate-100 dark:border-gray-800 rounded-xl relative group hover:border-slate-200 transition-colors">
-                  <div className="flex-1 min-w-[300px]">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">{t.item}</label>
+                <div key={index} className="flex flex-wrap lg:flex-nowrap gap-3 items-end p-4 border border-slate-100 dark:border-gray-800 rounded-xl relative group hover:border-slate-200 dark:hover:border-gray-700 transition-colors">
+                  <div className="flex-1 min-w-[200px]">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">{t.item}</label>
                     <select value={it.item_id} onChange={(e) => handleItemChange(index, 'item_id', e.target.value)} className="input-field bg-transparent" required>
                       <option value="">{t.select_item}</option>
                       {items.map(i => (
@@ -479,44 +528,44 @@ export default function Sales() {
                       ))}
                     </select>
                   </div>
-                  <div className="w-24">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block text-center">{t.qty}</label>
+                  <div className="w-20">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block text-center">{t.qty}</label>
                     <input type="number" min="1" value={it.quantity} onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} className="input-field text-center font-bold" required />
                   </div>
-                  <div className="w-32">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block text-right">{t.price}</label>
+                  <div className="w-28">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block text-right">{t.price}</label>
                     <input type="number" min="0" step="0.01" value={it.unit_price} onChange={(e) => handleItemChange(index, 'unit_price', e.target.value)} className="input-field text-right font-bold" required />
                   </div>
-                  <div className="w-32 text-right">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">{t.table_total}</label>
-                    <div className="text-lg font-bold text-slate-900 dark:text-white px-2">
+                  <div className="w-28 text-right">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">{t.table_total}</label>
+                    <div className="text-sm font-bold text-slate-900 dark:text-white px-2 py-2.5">
                       {(Number(it.quantity) * Number(it.unit_price)).toFixed(2)}
                     </div>
                   </div>
                   {formData.items.length > 1 && (
-                    <button type="button" onClick={() => handleRemoveItemRow(index)} className="p-2 text-rose-400 hover:bg-rose-50 rounded-lg transition-colors">
-                      <X size={20} />
+                    <button type="button" onClick={() => handleRemoveItemRow(index)} className="p-2 text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors">
+                      <X size={18} />
                     </button>
                   )}
                 </div>
               ))}
             </div>
 
-            <div className="flex justify-end pt-8">
-              <div className="w-full max-w-sm flex justify-between items-center bg-slate-100 dark:bg-gray-800 p-8 rounded-xl">
-                 <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t.total_amount}</span>
-                 <span className="text-3xl font-bold text-slate-900 dark:text-white">{formatCurrency(calculateTotal())}</span>
+            <div className="flex justify-end pt-2">
+              <div className="w-full max-w-sm flex justify-between items-center gap-3 bg-slate-100 dark:bg-gray-800 px-5 py-3.5 rounded-xl">
+                 <span className="text-[10px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest">{t.total_amount}</span>
+                 <span className="text-lg font-bold text-slate-900 dark:text-white whitespace-nowrap tabular-nums">{formatCurrency(calculateTotal())}</span>
               </div>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">{t.note}</label>
-            <textarea value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} className="input-field !bg-transparent" rows="3" />
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">{t.note}</label>
+            <textarea value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} className="input-field !bg-transparent" rows="2" />
           </div>
 
-          <div className="flex justify-end pt-10 border-t border-slate-100 dark:border-gray-800">
-            <button type="submit" className="btn-primary min-w-[300px] !py-4 text-xl">
+          <div className="flex justify-end pt-5 border-t border-slate-100 dark:border-gray-800">
+            <button type="submit" className="btn-primary min-w-[160px]">
               {t.create}
             </button>
           </div>
@@ -525,7 +574,7 @@ export default function Sales() {
 
       {/* ── Invoice Modal ── */}
       {newSale && (
-        <Modal isOpen={showInvoiceModal} onClose={() => setShowInvoiceModal(false)} title={t.sale_complete} size="full">
+        <Modal isOpen={showInvoiceModal} onClose={() => setShowInvoiceModal(false)} title={t.sale_complete} size="xl">
           <div className="pt-4">
             <InvoiceView sale={newSale} items={items} t={t} />
             <div className="mt-12 flex justify-center gap-4 no-print max-w-[800px] mx-auto">
@@ -548,7 +597,7 @@ export default function Sales() {
 
       {/* ── View Sale Modal ── */}
       {selectedSale && (
-        <Modal isOpen={showViewModal} onClose={() => setShowViewModal(false)} title={`${t.sales_title}: ${selectedSale.sale_number}`} size="full">
+        <Modal isOpen={showViewModal} onClose={() => setShowViewModal(false)} title={`${t.sales_title}: ${selectedSale.sale_number}`} size="xl">
           <div className="pt-4">
             <InvoiceView sale={selectedSale} items={items} t={t} />
             <div className="mt-12 flex justify-center gap-4 no-print max-w-[800px] mx-auto">

@@ -213,21 +213,21 @@ export default function Contacts() {
           setEditingId(null)
         }}
         title={editingId ? t.edit_contact : t.add_contact}
-        size="full"
+        size="lg"
       >
-        <form onSubmit={handleSubmit} className="space-y-8 max-w-[800px] mx-auto animate-fade-in pt-10">
+        <form onSubmit={handleSubmit} className="space-y-5 animate-fade-in">
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">{t.contact_name}</label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="input-field !py-4 text-lg font-semibold"
+              className="input-field font-semibold"
               required
             />
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">{t.contact_email}</label>
               <input
@@ -266,31 +266,31 @@ export default function Contacts() {
               value={formData.note}
               onChange={(e) => setFormData({ ...formData, note: e.target.value })}
               className="input-field"
-              rows="3"
+              rows="2"
             />
           </div>
 
-          <div className="flex items-center gap-2 p-5 bg-slate-50 dark:bg-gray-800 rounded-xl border border-slate-100 dark:border-gray-800">
+          <div className="flex items-center gap-2 p-4 bg-slate-50 dark:bg-gray-800 rounded-xl border border-slate-100 dark:border-gray-800">
              <input
               type="checkbox"
               checked={formData.active}
               onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-              className="w-5 h-5 rounded text-sky-600 border-slate-200 outline-none transition-all cursor-pointer"
+              className="w-5 h-5 rounded text-sky-600 border-slate-200 dark:border-gray-700 outline-none transition-all cursor-pointer"
             />
             <span className="text-slate-700 dark:text-gray-300 font-semibold text-xs uppercase tracking-widest">{t.active_status}</span>
           </div>
 
-           <div className="flex justify-end gap-3 pt-10 border-t border-slate-100 dark:border-gray-800">
-            <button 
-              type="button" 
+           <div className="flex justify-end gap-3 pt-5 border-t border-slate-100 dark:border-gray-800">
+            <button
+              type="button"
               onClick={() => setShowModal(false)}
-              className="flex-1 btn-secondary !py-4"
+              className="flex-1 btn-secondary"
             >
               {t.cancel}
             </button>
-            <button 
-              type="submit" 
-              className="flex-1 btn-primary !py-4"
+            <button
+              type="submit"
+              className="flex-1 btn-primary"
             >
               {editingId ? t.update : t.create}
             </button>

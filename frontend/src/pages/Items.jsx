@@ -78,6 +78,22 @@ export default function Items() {
     }
   }
 
+  // Auto-generate the next SKU like ITEM-001, ITEM-002 ... based on existing items
+  const generateSKU = () => {
+    let max = 0
+    items.forEach((i) => {
+      const m = /^ITEM-(\d+)$/.exec(i.sku || '')
+      if (m) max = Math.max(max, parseInt(m[1], 10))
+    })
+    return `ITEM-${String(max + 1).padStart(3, '0')}`
+  }
+
+  const openAddModal = () => {
+    setEditingId(null)
+    setFormData({ ...initialFormData, sku: generateSKU() })
+    setShowModal(true)
+  }
+
   const filteredItems = items.filter(item =>
     item.name.toLowerCase().includes(search.toLowerCase()) ||
     item.sku.toLowerCase().includes(search.toLowerCase())
@@ -94,11 +110,7 @@ export default function Items() {
           <p className="text-sm text-slate-500 mt-1">Manage and track your products and inventory levels.</p>
         </div>
         <button
-          onClick={() => {
-            setEditingId(null)
-            setFormData(initialFormData)
-            setShowModal(true)
-          }}
+          onClick={openAddModal}
           className="btn-primary flex items-center space-x-2"
         >
           <Plus size={20} />
@@ -204,27 +216,31 @@ export default function Items() {
           setEditingId(null)
         }}
         title={editingId ? t.edit_item : t.add_item}
-        size="full"
+        size="lg"
       >
-        <form onSubmit={handleSubmit} className="space-y-8 max-w-[800px] mx-auto animate-fade-in pt-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <form onSubmit={handleSubmit} className="space-y-5 animate-fade-in">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">{t.item_name}</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="input-field !py-4 text-lg font-semibold"
+                className="input-field font-semibold"
                 required
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">{t.sku}</label>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 flex items-center gap-2">
+                {t.sku}
+                <span className="text-[9px] font-bold text-sky-500 normal-case tracking-normal">(auto)</span>
+              </label>
               <input
                 type="text"
                 value={formData.sku}
-                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                className="input-field !py-4 font-mono text-lg font-semibold"
+                readOnly
+                title="Auto-generated"
+                className="input-field font-mono font-semibold bg-slate-100 dark:bg-gray-800 cursor-not-allowed text-slate-500 dark:text-gray-400"
                 required
               />
             </div>
@@ -240,7 +256,7 @@ export default function Items() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">{t.cost_price}</label>
               <input
@@ -265,7 +281,7 @@ export default function Items() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">{t.stock_on_hand}</label>
               <input
@@ -288,17 +304,17 @@ export default function Items() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-10 border-t border-slate-100 dark:border-gray-800">
-            <button 
-              type="button" 
+          <div className="flex justify-end gap-3 pt-5 border-t border-slate-100 dark:border-gray-800">
+            <button
+              type="button"
               onClick={() => setShowModal(false)}
-              className="flex-1 btn-secondary !py-4"
+              className="flex-1 btn-secondary"
             >
               {t.cancel}
             </button>
-            <button 
-              type="submit" 
-              className="flex-1 btn-primary !py-4"
+            <button
+              type="submit"
+              className="flex-1 btn-primary"
             >
               {editingId ? t.update : t.create}
             </button>
